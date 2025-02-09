@@ -57,6 +57,11 @@ class DriverPassengerService {
             'distanceFromPassenger': data['distanceFromPassenger'],
             'driverDistanceFromDestination': data['distanceFromPassenger'],
             'calculatedFare': data['calculatedFare'],
+            'vehicleMake': data['vehicleMake'],
+            'vehicleModel': data['vehicleModel'],
+            'vehicleNumber': data['vehicleNumber'],
+            'vehicleCategory': data['vehicleCategory'],
+            'litersPerMeter': data['litersPerMeter'],
             'timestamp': data['timestamp'],
           });
         }
@@ -111,6 +116,11 @@ class DriverPassengerService {
         'distanceFromPassenger': driverInfo['distanceFromPassenger'],
         'driverDistanceFromDestination': driverInfo['driverDistanceFromDestination'],
         'calculatedFare': driverInfo['calculatedFare'],
+        'vehicleMake': driverInfo['vehicleMake'],
+        'vehicleModel': driverInfo['vehicleModel'],
+        'vehicleNumber': driverInfo['vehicleNumber'],
+        'vehicleCategory': driverInfo['vehicleCategory'],
+        'litersPerMeter': driverInfo['litersPerMeter'],
         'acceptedAt': Timestamp.now(),
       });
 
@@ -149,4 +159,5 @@ class DriverPassengerService {
       throw Exception('Failed to cancel other drivers');
     }
   }
+
 }

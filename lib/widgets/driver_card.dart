@@ -81,6 +81,19 @@ class DriverCard extends ConsumerWidget {
     );
   }
 
+  IconData _getVehicleIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'car':
+        return Icons.directions_car;
+      case 'bike':
+        return Icons.two_wheeler;
+      case 'rickshaw':
+        return Icons.electric_rickshaw;
+      default:
+        return Icons.directions_car;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.read(currentUserProvider);
@@ -120,7 +133,6 @@ class DriverCard extends ConsumerWidget {
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              // color: Color.fromRGBO(30, 60, 87, 1),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -138,6 +150,21 @@ class DriverCard extends ConsumerWidget {
                           const SizedBox(width: 4),
                           Text(
                             estimatedTime,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // Add vehicle icon based on category
+                          Icon(
+                            _getVehicleIcon(driverInfo["vehicleCategory"] as String),
+                            size: 14,
+                            color: Colors.grey[600],
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            driverInfo["vehicleCategory"] as String,
                             style: TextStyle(
                               fontSize: 13,
                               color: Colors.grey[600],

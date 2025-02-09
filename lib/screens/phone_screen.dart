@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:manzil_app_v3/main.dart';
 import 'dart:convert';
 
 import 'package:manzil_app_v3/screens/otp_screen.dart';
@@ -130,6 +132,9 @@ class _PhoneScreenState extends State<PhoneScreen> {
           ),
         );
       }
+      // final box = GetStorage();
+      // box.write('phoneNumber', _phoneNumberController.text);
+      // Navigator.push(context, MaterialPageRoute(builder: (context) => const MyApp(),));
     } catch (e) {
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(

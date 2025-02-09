@@ -31,6 +31,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     final box = GetStorage();
     phoneNumber = box.read('phoneNumber');
+    // phoneNumber = '+92' + (box.read('phoneNumber'));
+    print("Phone");
+    print(phoneNumber);
     _fetchUserData();
     _initializeLocation();
   }
@@ -87,6 +90,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         if (querySnapshot.docs.isNotEmpty) {
           final doc = querySnapshot.docs.first;
           final userData = doc.data() as Map<String, dynamic>;
+          print("UserData");
+          print(userData);
           userData['uid'] = doc.id;
           // print(userData['isBanned'] == true);
           // logic to check if user is banned because we want to log him out then

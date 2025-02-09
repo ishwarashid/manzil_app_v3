@@ -50,7 +50,7 @@ class _PassengerTrackingState extends ConsumerState<PassengerTracking> {
     _updateDistance();
 
     _distanceUpdateTimer = Timer.periodic(
-      const Duration(minutes: 2),
+      const Duration(seconds: 30),
           (_) => _updateDistance(),
     );
   }
@@ -303,6 +303,19 @@ class _PassengerTrackingState extends ConsumerState<PassengerTracking> {
     }
   }
 
+  IconData _getVehicleIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'car':
+        return Icons.directions_car;
+      case 'bike':
+        return Icons.two_wheeler;
+      case 'rickshaw':
+        return Icons.electric_rickshaw;
+      default:
+        return Icons.directions_car;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUser = ref.watch(currentUserProvider);
@@ -498,6 +511,33 @@ class _PassengerTrackingState extends ConsumerState<PassengerTracking> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _getVehicleIcon(currentRide['vehicleCategory'] as String),
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              currentRide['vehicleNumber'] as String,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 30),
                       if (rideStatus == 'paying') ...[
                         const Icon(
                           Icons.payments_outlined,

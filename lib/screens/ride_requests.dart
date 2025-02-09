@@ -3,13 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:manzil_app_v3/providers/current_user_provider.dart';
 import 'package:manzil_app_v3/providers/rides_filter_provider.dart';
+import 'package:manzil_app_v3/screens/add_vehicle_screen.dart';
 import 'package:manzil_app_v3/screens/chats_screen.dart';
+import 'package:manzil_app_v3/screens/manage_vehicles_screen.dart';
 import 'package:manzil_app_v3/screens/ride_location_map.dart';
 import 'package:manzil_app_v3/screens/setup_driver_screen.dart';
 import 'package:manzil_app_v3/screens/update_driver_documents.dart';
 import 'package:manzil_app_v3/screens/user_chat_screen.dart';
 import 'package:manzil_app_v3/services/ride/ride_services.dart';
 import 'package:manzil_app_v3/widgets/destination_alert_dialog.dart';
+import 'package:manzil_app_v3/widgets/vehicle_selection_dialog.dart';
 
 class RideRequestsScreen extends ConsumerStatefulWidget {
   const RideRequestsScreen({super.key});
@@ -105,13 +108,38 @@ class RideRequestsScreenState extends ConsumerState<RideRequestsScreen> {
 
     try {
       setState(() {
-        _processingRideId = rideId; // here i am storing the ID of the ride being processed so only that rides button start loading after click
+        _processingRideId = rideId;
       });
 
       final currentUser = ref.read(currentUserProvider);
 
       try {
-        await _ridesService.acceptRide(rideId, currentUser);
+        // First get the vehicles
+        final vehiclesData =
+            await _ridesService.getDriverVehicles(currentUser['uid']);
+
+        Map<String, dynamic>? selectedVehicle;
+
+        if (vehiclesData['needsSelection']) {
+          // Show dialog if multiple vehicles
+          selectedVehicle = await showDialog<Map<String, dynamic>>(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => VehicleSelectionDialog(
+              vehicles: vehiclesData['vehicles'],
+            ),
+          );
+
+          if (selectedVehicle == null) {
+            throw Exception('Vehicle selection cancelled');
+          }
+        } else {
+          // Use the only vehicle available
+          selectedVehicle = vehiclesData['vehicles'][0];
+        }
+
+        // Now accept the ride with the selected vehicle
+        await _ridesService.acceptRide(rideId, currentUser, selectedVehicle);
 
         if (mounted) {
           ScaffoldMessenger.of(context).clearSnackBars();
@@ -123,13 +151,13 @@ class RideRequestsScreenState extends ConsumerState<RideRequestsScreen> {
           );
         }
       } catch (e) {
-        // print(e);
         if (e is Map && e.containsKey('needsSetup')) {
           print("hii");
           if (e['needsSetup'] == true) {
             if (mounted) {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const SetupDriverScreen()),
+                MaterialPageRoute(
+                    builder: (context) => const SetupDriverScreen()),
               );
             }
           } else {
@@ -146,14 +174,23 @@ class RideRequestsScreenState extends ConsumerState<RideRequestsScreen> {
               );
             }
           }
+        } else if (e.toString().contains(
+            'No vehicles found. Please set up your vehicle information first.')) {
+          print("bye");
+          if (mounted) {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => const AddVehicleScreen()),
+            );
+          }
         } else {
           String errorMessage = e.toString();
           if (errorMessage.contains('Exception: ')) {
             errorMessage = errorMessage.replaceAll('Exception: ', '');
           }
 
-          if (errorMessage.contains('RangeError')){
-            errorMessage = "Something went wrong. Please check your internet connection.";
+          if (errorMessage.contains('RangeError')) {
+            errorMessage =
+                "Something went wrong. Please check your internet connection.";
           }
 
           if (mounted) {
@@ -166,9 +203,7 @@ class RideRequestsScreenState extends ConsumerState<RideRequestsScreen> {
               ),
             );
           }
-
         }
-        // rethrow;
       }
     } finally {
       if (mounted) {
@@ -224,6 +259,32 @@ class RideRequestsScreenState extends ConsumerState<RideRequestsScreen> {
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ManageVehiclesScreen(),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                        padding: const EdgeInsets.all(10),
+                        child: const Icon(Icons.settings)),
+                  ),
+                ),
+              ),
+              const SizedBox(
+                width: 10,
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color.fromRGBO(30, 60, 87, 1).withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
                     onTap: _showDestinationInputDialog,
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
@@ -235,7 +296,7 @@ class RideRequestsScreenState extends ConsumerState<RideRequestsScreen> {
                           height: 48,
                         ),
                         size: 22,
-                        color: Color.fromRGBO(30, 60, 87, 1),
+                        // color: Color.fromRGBO(30, 60, 87, 1),
                       ),
                     ),
                   ),
@@ -302,8 +363,8 @@ class RideRequestsScreenState extends ConsumerState<RideRequestsScreen> {
                       onAccept: () =>
                           _acceptRide(filteredRequests[index]['id']),
                       onChat: () => _initiateChat(filteredRequests[index]),
-                      isProcessing: _processingRideId ==
-                          filteredRequests[index]['id'],
+                      isProcessing:
+                          _processingRideId == filteredRequests[index]['id'],
                     ),
                   );
                 },
@@ -398,7 +459,6 @@ class RideRequestCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -440,9 +500,7 @@ class RideRequestCard extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 16),
-
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -456,7 +514,8 @@ class RideRequestCard extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (context) => RideLocationsMap(
                         pickupCoordinates: request["pickupCoordinates"] as List,
-                        destinationCoordinates: request["destinationCoordinates"] as List,
+                        destinationCoordinates:
+                            request["destinationCoordinates"] as List,
                         pickupLocation: request["pickupLocation"] as String,
                         destination: request["destination"] as String,
                       ),
@@ -504,9 +563,7 @@ class RideRequestCard extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
-
             Row(
               children: [
                 Container(
@@ -529,9 +586,7 @@ class RideRequestCard extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 const SizedBox(width: 12),
-
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
@@ -551,9 +606,7 @@ class RideRequestCard extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 const Spacer(),
-
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -591,9 +644,7 @@ class RideRequestCard extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 16),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
